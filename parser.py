@@ -1,5 +1,6 @@
 from tinylang_ast import *
 from lexer import lex
+from interpreter import Interpreter
 
 class Parser:
     def __init__(self, tokens):
@@ -38,7 +39,7 @@ class Parser:
             expr = self.expression()
             self.expect('SEMICOLON')
             return LetStatement(name, expr)
-        
+
         elif self.match('PRINT'):
             self.expect('LPAREN')
             expr = self.expression()
@@ -69,6 +70,14 @@ class Parser:
             self.expect('RBRACE')
             return WhileStatement(cond, body)
 
+        elif self.current()[0] == 'IDENTIFIER':
+            # Reassignment like: count = count + 1;
+            name = self.expect('IDENTIFIER')
+            self.expect('ASSIGN')
+            expr = self.expression()
+            self.expect('SEMICOLON')
+            return LetStatement(name, expr)
+
         else:
             raise SyntaxError(f"Unexpected statement at {self.current()}")
 
@@ -79,7 +88,6 @@ class Parser:
         return statements
 
     def expression(self):
-        # We'll support binary expressions for now: a + b
         left = self.term()
         while self.match('PLUS', 'MINUS', 'EQ', 'NE', 'LT', 'LE', 'GT', 'GE'):
             op = self.tokens[self.pos - 1][1]
@@ -99,15 +107,20 @@ class Parser:
         else:
             raise SyntaxError(f"Unexpected token {self.current()}")
 
-# === TESTING ===
+# === Test code ===
 if __name__ == "__main__":
     code = """
     let x = 5 + 3;
     print(x);
+    let count = 0;
+    while (count < 3) {
+        print(count);
+        count = count + 1;
+    }
     """
     tokens = lex(code)
     parser = Parser(tokens)
     ast = parser.parse()
 
-    for stmt in ast:
-        print(stmt.__dict__)  # You can later use pretty-print or JSON
+    interpreter = Interpreter()
+    interpreter.run(ast)
