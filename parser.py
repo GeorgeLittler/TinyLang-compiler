@@ -1,6 +1,6 @@
 from tinylang_ast import *
 from lexer import lex
-from interpreter import Interpreter
+from codegen_c import CCodeGenerator
 
 class Parser:
     def __init__(self, tokens):
@@ -98,6 +98,8 @@ class Parser:
     def term(self):
         if self.match('INTEGER'):
             return Integer(self.tokens[self.pos - 1][1])
+        elif self.match('STRING'):
+            return String(self.tokens[self.pos - 1][1])
         elif self.match('IDENTIFIER'):
             return Variable(self.tokens[self.pos - 1][1])
         elif self.match('LPAREN'):
@@ -110,6 +112,7 @@ class Parser:
 # === Test code ===
 if __name__ == "__main__":
     code = """
+    print("hello");
     let x = 5 + 3;
     print(x);
     let count = 0;
@@ -122,5 +125,10 @@ if __name__ == "__main__":
     parser = Parser(tokens)
     ast = parser.parse()
 
-    interpreter = Interpreter()
-    interpreter.run(ast)
+    gen = CCodeGenerator()
+    c_code = gen.generate(ast)
+
+    with open("output.c", "w") as f:
+        f.write(c_code)
+
+    print("✅ Generated C code written to output.c")

@@ -2,7 +2,8 @@ from tinylang_ast import *
 
 class Interpreter:
     def __init__(self):
-        self.env = {}  # variable environment (symbol table)
+        # Variable environment (symbol table)
+        self.env = {}
 
     def run(self, program):
         for stmt in program:
@@ -35,31 +36,42 @@ class Interpreter:
             raise RuntimeError(f"Unknown statement: {node}")
 
     def eval_expr(self, expr):
+        # Literals
         if isinstance(expr, Integer):
             return expr.value
-        elif isinstance(expr, Variable):
+        if isinstance(expr, String):
+            return expr.value
+
+        # Variables
+        if isinstance(expr, Variable):
             if expr.name in self.env:
                 return self.env[expr.name]
-            else:
-                raise NameError(f"Undefined variable: {expr.name}")
-        elif isinstance(expr, BinaryOp):
+            raise NameError(f"Undefined variable: {expr.name}")
+
+        # Binary operations
+        if isinstance(expr, BinaryOp):
             left = self.eval_expr(expr.left)
             right = self.eval_expr(expr.right)
             op = expr.op
 
-            if op == '+': return left + right
-            if op == '-': return left - right
-            if op == '*': return left * right
-            if op == '/': return left // right  # integer division
-            if op == '%': return left % right
+            # If either side is a string and op is '+', do string concatenation
+            if op == '+':
+                if isinstance(left, str) or isinstance(right, str):
+                    return str(left) + str(right)
+                return left + right
+
+            if op == '-':  return left - right
+            if op == '*':  return left * right
+            if op == '/':  return left // right  # integer division
+            if op == '%':  return left % right
+
             if op == '==': return left == right
             if op == '!=': return left != right
-            if op == '<': return left < right
+            if op == '<':  return left < right
             if op == '<=': return left <= right
-            if op == '>': return left > right
+            if op == '>':  return left > right
             if op == '>=': return left >= right
 
             raise RuntimeError(f"Unknown operator: {op}")
 
-        else:
-            raise RuntimeError(f"Unknown expression: {expr}")
+        raise RuntimeError(f"Unknown expression: {expr}")

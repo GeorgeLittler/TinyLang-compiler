@@ -3,6 +3,10 @@ class Node:
 
 # === EXPRESSIONS ===
 
+class String(Node):
+    def __init__(self, value):
+        self.value = str(value)
+
 class Integer(Node):
     def __init__(self, value):
         self.value = int(value)

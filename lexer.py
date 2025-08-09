@@ -25,8 +25,13 @@ DOUBLE_CHAR_TOKENS = {
     '>=': 'GE',
 }
 
+def unescape_string(raw):
+    s = raw[1:-1]
+    s = s.replace(r'\"', '"').replace(r'\\', '\\').replace(r'\n', '\n')
+    return s
+
 def is_whitespace(char):
-    return char in ' \t\n'
+    return char in ' \t\n\r'
 
 def is_letter(char):
     return char.isalpha() or char == '_'
@@ -58,6 +63,30 @@ def lex(source):
         if char in SINGLE_CHAR_TOKENS:
             tokens.append((SINGLE_CHAR_TOKENS[char], char))
             i += 1
+            continue
+
+        if char == '"':
+            start = i
+            i += 1
+            escaped = False
+            while i < length:
+                c = source[i]
+                if escaped:
+                    escaped = False
+                    i += 1
+                else:
+                    if c == '\\':
+                        escaped = True
+                        i += 1
+                    elif c == '"':
+                        i += 1
+                        raw = source[start:i]
+                        tokens.append(('STRING', unescape_string(raw)))
+                        break
+                    else:
+                        i += 1
+            else:
+                raise SyntaxError("Unterminated string literal")
             continue
 
         # Numbers
